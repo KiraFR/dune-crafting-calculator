@@ -1,0 +1,11 @@
+node_modules/
+dist/
+__pycache__/
+*.pyc
+tools/recipe_export/bin/
+tools/recipe_export/obj/
+*.log
+# Local settings (Supabase URL and key), see .env.example.
+*.local
+# Supabase settings for production builds, see .env.production.example.
+.env.production

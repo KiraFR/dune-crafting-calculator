@@ -1,0 +1,833 @@
+/* Components, in the order of the design system's component cards.
+ *
+ * One page, modelled on dune.gaming.tools: the item list on the left, and on
+ * the right three stacked panels (selected items, raw materials, crafting
+ * steps). Every list row is icon + name + quantity; covered rows sink to the
+ * bottom of their panel, struck through. */
+
+/* ---------- App shell ---------- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) max(16px, env(safe-area-inset-right, 0px)) var(--space-4) max(16px, env(safe-area-inset-left, 0px));
+  border-bottom: 1px solid var(--night-700);
+}
+
+.app__title {
+  display: flex;
+  flex-direction: column;
+  font: 700 24px/28px var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.app__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Guild list controls: a status dot (blue live, spice sending, rust offline or
+ * missing), the copy-link button and the way back to the personal list. */
+.guild-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.guild-bar__error {
+  font-size: 13px;
+  color: var(--rust-400);
+}
+
+.guild-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 3px var(--space-3) 3px var(--space-2);
+  border: 1px solid var(--night-700);
+  border-radius: var(--radius-md);
+}
+
+.guild-status__name {
+  font: 600 12px/18px var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sand-50);
+}
+
+.guild-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sand-500);
+}
+
+.guild-status--live .guild-status__dot {
+  background: var(--ibad-400);
+}
+
+.guild-status--saving .guild-status__dot {
+  background: var(--spice-400);
+}
+
+.guild-status--offline .guild-status__dot,
+.guild-status--missing .guild-status__dot {
+  background: var(--rust-400);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* EN | FR: two small buttons, the current language filled. */
+.lang-switch {
+  display: inline-flex;
+  border: 1px solid var(--night-600);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.lang-switch__option {
+  padding: 3px var(--space-2);
+  border: 0;
+  background: none;
+  font: 600 12px/18px var(--font-display);
+  letter-spacing: 0.1em;
+  color: var(--sand-300);
+  cursor: pointer;
+}
+
+.lang-switch__option + .lang-switch__option {
+  border-left: 1px solid var(--night-600);
+}
+
+.lang-switch__option[aria-pressed='true'] {
+  background: var(--night-800);
+  color: var(--sand-50);
+}
+
+/* Three columns on wide screens: items | selection and plan | machines.
+ * Narrower, the machines panel sits above the selection; on phones, one column. */
+.app__layout {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 720px) minmax(240px, 300px);
+  grid-template-areas: 'browser work side';
+  justify-content: center;
+  gap: var(--space-4);
+  align-items: start;
+  width: 100%;
+  padding: var(--space-4) max(16px, env(safe-area-inset-right, 0px)) var(--space-6) max(16px, env(safe-area-inset-left, 0px));
+}
+
+.app__browser {
+  grid-area: browser;
+  position: sticky;
+  top: var(--space-4);
+}
+
+.app__browser .panel {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2 * var(--space-4));
+}
+
+.app__work {
+  grid-area: work;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.app__side {
+  grid-area: side;
+  position: sticky;
+  top: var(--space-4);
+  min-width: 0;
+}
+
+.app__side:empty {
+  display: none;
+}
+
+.app__footer {
+  padding: var(--space-4) max(16px, env(safe-area-inset-right, 0px)) var(--space-6) max(16px, env(safe-area-inset-left, 0px));
+  text-align: center;
+}
+
+@media (max-width: 1400px) {
+  .app__layout {
+    grid-template-columns: minmax(260px, 340px) minmax(0, 720px);
+    grid-template-areas:
+      'browser side'
+      'browser work';
+  }
+  .app__side {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .app__layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'browser'
+      'side'
+      'work';
+  }
+  .app__browser {
+    position: static;
+  }
+  .app__browser .panel {
+    max-height: 50vh;
+  }
+}
+
+/* ---------- Panel ---------- */
+
+.panel {
+  padding: var(--space-4);
+  background: var(--night-900);
+  border: 1px solid var(--night-700);
+  border-radius: var(--radius-lg);
+  min-width: 0;
+}
+
+.panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.panel__count {
+  margin-left: var(--space-2);
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  background: var(--night-800);
+  font: 600 12px/18px var(--font-body);
+  letter-spacing: 0;
+  color: var(--sand-300);
+}
+
+.panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ---------- Item icon ---------- */
+
+/* The game's 64px icon on a fixed tile, so an item without one (Water) keeps
+ * the column aligned. */
+.item-icon {
+  display: block;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--night-800);
+  object-fit: contain;
+}
+
+/* ---------- Controls ---------- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 5px var(--space-3);
+  border: 1px solid var(--spice-400);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--spice-400);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--spice-400);
+  color: var(--spice-ink);
+}
+
+.button--ghost {
+  border-color: transparent;
+  color: var(--sand-300);
+}
+
+.button--ghost:hover {
+  background: var(--night-800);
+  color: var(--sand-50);
+}
+
+.button--icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-color: transparent;
+  color: var(--sand-300);
+  font-size: 18px;
+}
+
+.button--icon:hover {
+  background: var(--night-800);
+  color: var(--rust-400);
+}
+
+.search,
+.select,
+.qty-input {
+  height: 32px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--night-600);
+  border-radius: var(--radius-md);
+  background: var(--night-800);
+  color: var(--sand-50);
+}
+
+.search {
+  width: 100%;
+  padding: 0 var(--space-3);
+}
+
+.search::placeholder,
+.qty-input::placeholder {
+  color: var(--sand-500);
+}
+
+.select {
+  min-width: 0;
+  max-width: 100%;
+  cursor: pointer;
+}
+
+.select--compact {
+  height: 28px;
+  font-size: 12px;
+}
+
+.qty-input {
+  width: 64px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  appearance: textfield;
+}
+
+.qty-input::-webkit-inner-spin-button,
+.qty-input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Have check: an empty box while something is left, Ibad blue once covered. */
+.have-check {
+  appearance: none;
+  display: grid;
+  flex-shrink: 0;
+  place-content: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1.5px solid var(--night-600);
+  border-radius: var(--radius-sm);
+  background: var(--night-800);
+  cursor: pointer;
+}
+
+.have-check:hover {
+  border-color: var(--spice-400);
+}
+
+.have-check:checked {
+  border-color: var(--ibad-400);
+  background: var(--ibad-400);
+}
+
+.have-check:checked::after {
+  content: '';
+  width: 5px;
+  height: 9px;
+  margin-top: -2px;
+  border: solid var(--night-950);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Quantity left, in spice; a click turns it into an "I have" field. */
+.qty-edit {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px dashed transparent;
+  background: none;
+  text-align: right;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--spice-400);
+  cursor: text;
+}
+
+.qty-edit:hover {
+  border-bottom-color: var(--spice-400);
+}
+
+.qty-edit__input {
+  width: 100%;
+  height: 28px;
+}
+
+/* − / + for the owned quantity, where there is no keyboard (overlay app). */
+.stepper {
+  display: inline-flex;
+  gap: 2px;
+  padding: 1px;
+  border: 1px solid var(--night-600);
+  border-radius: var(--radius-md);
+  background: var(--night-800);
+  text-shadow: none;
+}
+
+.stepper__btn {
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  font-weight: 600;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.stepper__btn:hover:not(:disabled) {
+  background: var(--night-700);
+  color: var(--spice-400);
+}
+
+.stepper__btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ---------- Item list (left) ---------- */
+
+.browser__filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+/* Category tabs: game icon over a short label, four per row; the chosen tab is
+ * outlined in spice like the chosen machine. */
+.cat-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.cat-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-2) 2px 6px;
+  border: 1px solid var(--night-700);
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--sand-300);
+  cursor: pointer;
+}
+
+.cat-tab:hover {
+  border-color: var(--night-600);
+  color: var(--sand-50);
+}
+
+.cat-tab[aria-pressed='true'] {
+  border-color: var(--spice-400);
+  background: var(--night-800);
+  color: var(--spice-400);
+}
+
+.cat-tab .item-icon {
+  background: none;
+}
+
+.cat-tab__label {
+  max-width: 100%;
+  font: 600 10.5px/14px var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.cat-tab__glyph {
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.cat-tab__glyph--dots {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* Tree under the tabs: a branch per subcategory (then model), items as leaves.
+ * Each level indents 16px; top-level branches carry the label style. */
+.tree-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 6px var(--space-2) 6px calc(var(--space-2) + var(--depth, 0) * 16px);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  text-align: left;
+  color: var(--sand-300);
+  cursor: pointer;
+}
+
+.tree-node:hover {
+  background: var(--night-800);
+  color: var(--sand-50);
+}
+
+.tree-node[aria-expanded='true'] {
+  color: var(--sand-50);
+}
+
+.tree-node__caret {
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.tree-node[aria-expanded='true'] .tree-node__caret {
+  stroke: var(--spice-400);
+}
+
+.tree-node__name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tree-node--top .tree-node__name {
+  font: 600 13px/18px var(--font-display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tree-node--top {
+  border-top: 1px solid var(--night-700);
+  border-radius: 0;
+}
+
+.tree-node__count {
+  font-size: 12px;
+  color: var(--sand-500);
+}
+
+/* Leaves sit one level in, their icon under the parent branch's name (caret 12px
+ * + gap 8px, minus the 16px level step). Two classes so .item-row's own padding,
+ * later in this file, does not cancel the indent. */
+.item-row.tree-item {
+  padding-left: calc(var(--space-2) + var(--depth, 0) * 16px + 4px);
+}
+
+/* Filter chips: Unique and tiers; a pressed chip is outlined and written in spice. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.chip {
+  padding: 2px var(--space-2);
+  border: 1px solid var(--night-600);
+  border-radius: var(--radius-md);
+  background: none;
+  font: 600 12px/18px var(--font-display);
+  letter-spacing: 0.06em;
+  color: var(--sand-300);
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--sand-50);
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--spice-400);
+  background: var(--night-800);
+  color: var(--spice-400);
+}
+
+.browser__empty {
+  padding: var(--space-2) 0;
+}
+
+.browser__list {
+  min-height: 0;
+  margin: 0 calc(-1 * var(--space-2));
+  overflow-y: auto;
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 6px var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item-row:hover {
+  background: var(--night-800);
+}
+
+/* French names run long: wrap to a second line rather than cut them. */
+.item-row__name {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  overflow-wrap: break-word;
+}
+
+.item-row__add {
+  font: 600 12px/16px var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--spice-400);
+  opacity: 0;
+}
+
+.item-row:hover .item-row__add,
+.item-row:focus-visible .item-row__add {
+  opacity: 1;
+}
+
+/* ---------- Selected items ---------- */
+
+.build {
+  display: flex;
+  flex-direction: column;
+}
+
+.build__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.build__row + .build__row {
+  border-top: 1px solid var(--night-700);
+}
+
+.build__name {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 500;
+  overflow-wrap: break-word;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  color: var(--sand-300);
+}
+
+.empty__examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* ---------- Machines ---------- */
+
+/* One group of picture cards per kind of refinery; the chosen machine is
+ * outlined in spice, like a selected option in the game's build menu. */
+/* One column in the side column, side by side when the panel sits above the selection. */
+.machines {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.machines__kind {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.machines__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sand-300);
+}
+
+.machines__options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.machine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
+  border: 1px solid var(--night-700);
+  border-radius: var(--radius-md);
+  background: none;
+  text-align: left;
+  color: var(--sand-300);
+  cursor: pointer;
+}
+
+.machine:hover {
+  border-color: var(--night-600);
+  color: var(--sand-50);
+}
+
+.machine[aria-checked='true'] {
+  border-color: var(--spice-400);
+  background: var(--night-800);
+  color: var(--sand-50);
+}
+
+.machine__name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+.machine[aria-checked='true'] .machine__name::after {
+  content: ' ✓';
+  color: var(--spice-400);
+}
+
+/* ---------- Raw materials and crafting steps ---------- */
+
+/* Check · quantity · icon · name, with an optional details line under the name. */
+.plan-row {
+  display: grid;
+  grid-template-columns: 18px 56px 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 2px var(--space-3);
+  padding: var(--space-2) 0;
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.plan-row + .plan-row {
+  border-top: 1px solid var(--night-700);
+}
+
+.plan-row--readonly {
+  grid-template-columns: 56px 24px minmax(0, 1fr);
+}
+
+.plan-row__qty {
+  text-align: right;
+  font-weight: 600;
+  color: var(--spice-400);
+}
+
+.plan-row__name {
+  font-weight: 500;
+}
+
+.plan-row__have {
+  margin-left: var(--space-2);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ibad-400);
+}
+
+.plan-row__details {
+  grid-column: 3 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--sand-300);
+}
+
+.plan-row--readonly .plan-row__details {
+  grid-column: 3;
+}
+
+.ingredient {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Covered rows sink to the bottom, struck through, behind a heavier rule. */
+.plan-row.is-done .plan-row__name,
+.plan-row.is-done .qty-edit {
+  color: var(--sand-500);
+  text-decoration: line-through;
+}
+
+.plan-row.is-done .item-icon {
+  opacity: 0.5;
+}
+
+.plan-row.is-done .plan-row__details {
+  display: none;
+}
+
+.plan-row:not(.is-done) + .plan-row.is-done {
+  border-top-color: var(--night-600);
+}

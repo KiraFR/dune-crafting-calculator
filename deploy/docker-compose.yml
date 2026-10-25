@@ -1,0 +1,21 @@
+# Static server for the calculator, in the directory deploy/deploy.sh publishes to (DEPLOY_DIR).
+#
+# A reverse proxy on the same server (Caddy, nginx, Traefik…) terminates HTTPS for the site and
+# proxies to this container over its Docker network, DEPLOY_NETWORK (set by deploy/deploy.sh); this
+# container publishes no port of its own. Releases are uploaded into site/releases/<stamp>, and
+# site/current points at the live one, so a deploy switches atomically.
+services:
+  web:
+    image: nginx:1.29-alpine
+    container_name: dune-web
+    restart: unless-stopped
+    volumes:
+      - ./site:/srv/site:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: ${DEPLOY_NETWORK:?set DEPLOY_NETWORK to the reverse proxy's Docker network}

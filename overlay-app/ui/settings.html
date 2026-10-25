@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Dune Overlay</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="hotkey.js" defer></script>
+  <script src="settings.js" defer></script>
+</head>
+<body class="settings">
+  <main class="settings__main">
+    <h1 class="label">Dune Overlay</h1>
+
+    <form id="list-form" class="field">
+      <label for="list" class="caption">Lien de la liste de guilde</label>
+      <div class="row">
+        <input id="list" class="input" placeholder="…/?list=…" autocomplete="off" spellcheck="false">
+        <button type="submit" class="button">Valider</button>
+      </div>
+      <p id="list-status" class="caption" role="status"></p>
+      <button id="open-list" type="button" class="button button--ghost">Ouvrir la liste dans l'app</button>
+    </form>
+
+    <div class="field">
+      <label for="hotkey" class="caption">Raccourci masquer / afficher</label>
+      <button id="hotkey" type="button" class="input input--key"></button>
+      <p id="hotkey-status" class="caption" role="status"></p>
+    </div>
+
+    <div class="field">
+      <label for="opacity" class="caption">Opacité <span id="opacity-value" class="num"></span></label>
+      <input id="opacity" type="range" class="range" min="30" max="100" step="5">
+    </div>
+
+    <div class="field">
+      <label for="zoom" class="caption">Taille du texte <span id="zoom-value" class="num"></span></label>
+      <input id="zoom" type="range" class="range" min="80" max="150" step="10">
+    </div>
+
+    <fieldset class="field fieldset">
+      <legend class="caption">Sections</legend>
+      <div class="row">
+        <label class="check"><input id="gather" type="checkbox"><span>À récolter</span></label>
+        <label class="check"><input id="craft" type="checkbox"><span>À fabriquer</span></label>
+      </div>
+    </fieldset>
+
+    <div class="field">
+      <span class="caption">Position</span>
+      <button id="move" type="button" class="button">Déplacer l'overlay</button>
+    </div>
+
+    <label class="check">
+      <input id="always" type="checkbox">
+      <span>Toujours afficher, même sans Dune</span>
+    </label>
+
+    <p class="dune"><span id="dune-dot" class="dot" aria-hidden="true"></span><span id="dune-text">Dune non lancé</span></p>
+  </main>
+</body>
+</html>

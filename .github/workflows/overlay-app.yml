@@ -1,0 +1,74 @@
+# Builds the overlay app's Windows exe and installer (overlay-app/).
+# - Every push to main or PR touching the app, or a manual run: tests, then the portable exe and the
+#   installer (dune-overlay-setup.exe) as an artifact.
+# - A tag "overlay-v*" (e.g. overlay-v0.2.1): the same, plus a GitHub release with both attached.
+name: Overlay app
+
+on:
+  push:
+    branches: [main]
+    tags: ['overlay-v*'] # path filters are not applied to tag pushes
+    paths: ['overlay-app/**', '.github/workflows/overlay-app.yml']
+  pull_request:
+    paths: ['overlay-app/**', '.github/workflows/overlay-app.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      # The calculator's address, baked into the app (overlay-app/build.rs): a repository secret, so the
+      # public logs mask it. Pull requests from forks get no secrets and build against a placeholder.
+      SITE_URL: ${{ secrets.SITE_URL || github.event_name == 'pull_request' && 'https://dune.example.com' || '' }}
+    defaults:
+      run:
+        working-directory: overlay-app
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: overlay-app
+
+      - name: Rust tests
+        run: cargo test --locked
+
+      - name: Hotkey tests
+        run: node --test tests/hotkey.test.cjs
+
+      # The Tauri CLI builds the release exe, then the NSIS installer from it (bundle in tauri.conf.json).
+      - name: Build the exe and the installer
+        run: npx --yes @tauri-apps/cli@2.12.4 build --ci -- --locked
+
+      # The bundler names it "Dune Overlay_<version>_x64-setup.exe"; a fixed name keeps links stable.
+      - name: Name the installer
+        run: Copy-Item -Path "target/release/bundle/nsis/*-setup.exe" -Destination "target/release/dune-overlay-setup.exe"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dune-overlay-windows
+          path: |
+            overlay-app/target/release/dune-overlay-setup.exe
+            overlay-app/target/release/dune-overlay.exe
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/overlay-v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dune-overlay-windows
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            dune-overlay-setup.exe
+            dune-overlay.exe
+          generate_release_notes: true

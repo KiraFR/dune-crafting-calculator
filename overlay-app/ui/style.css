@@ -1,0 +1,290 @@
+/* The app's two local pages, in the calculator's design system ("Dune Crafting Calculator UI"):
+ * warm umber neutrals, spice for what is left and for actions, Ibad blue for what is fine. */
+
+@font-face {
+  font-family: 'Saira Semi Condensed';
+  font-weight: 600;
+  src: url('fonts/saira-semi-condensed-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-weight: 400;
+  src: url('fonts/ibm-plex-sans-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-weight: 600;
+  src: url('fonts/ibm-plex-sans-latin-600-normal.woff2') format('woff2');
+}
+
+:root {
+  /* Same scheme as the calculator page: an iframe stays transparent only when both match. */
+  color-scheme: dark;
+  --night-950: #14110e;
+  --night-900: #1c1814;
+  --night-800: #26201a;
+  --night-700: #3a3128;
+  --night-600: #7a6a56;
+  --sand-50: #f1e6d2;
+  --sand-300: #b9a888;
+  --sand-500: #9c8c72;
+  --spice-400: #e0a24e;
+  --spice-ink: #1a120a;
+  --ibad-400: #6cb4ec;
+  --rust-400: #e2734f;
+  --font-display: 'Saira Semi Condensed', 'Arial Narrow', sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--sand-50);
+}
+
+.label {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 16px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sand-300);
+}
+
+.caption {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--sand-500);
+}
+
+.caption[data-kind='ok'] {
+  color: var(--ibad-400);
+}
+
+.caption[data-kind='error'] {
+  color: var(--rust-400);
+}
+
+.button {
+  padding: 8px 16px;
+  border: 1px solid var(--spice-400);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--spice-400);
+  font: 600 14px/20px var(--font-body);
+  cursor: pointer;
+}
+
+.button:hover,
+.button--active {
+  background: var(--spice-400);
+  color: var(--spice-ink);
+}
+
+.button--ghost {
+  align-self: flex-start;
+  padding: 4px 0;
+  border: 0;
+  color: var(--sand-300);
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.button--ghost:hover {
+  background: transparent;
+  color: var(--spice-400);
+}
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fieldset legend {
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.row .check {
+  margin-right: 16px;
+}
+
+.check input:disabled + span {
+  color: var(--sand-500);
+}
+
+.input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--night-600);
+  border-radius: 4px;
+  background: var(--night-800);
+  color: var(--sand-50);
+  font: 400 14px/20px var(--font-body);
+  text-align: left;
+}
+
+.input:focus-visible,
+.button:focus-visible {
+  outline: 2px solid var(--spice-400);
+  outline-offset: 2px;
+}
+
+.input--key {
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.input--capturing {
+  border-color: var(--spice-400);
+  color: var(--sand-300);
+}
+
+/* Settings window */
+
+.settings {
+  background: var(--night-950);
+}
+
+.settings__main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  color: var(--sand-300);
+}
+
+.range {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--spice-400);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--spice-400);
+}
+
+.dune {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--sand-300);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--night-600);
+}
+
+.dot--live {
+  border-color: var(--ibad-400);
+  background: var(--ibad-400);
+}
+
+/* Overlay window: transparent; the calculator page brings its own panel. */
+
+html.overlay-window,
+.overlay-window body {
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+.overlay-window iframe {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+}
+
+.move {
+  position: fixed;
+  inset: 0;
+}
+
+.move__frame {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  border: 2px dashed var(--spice-400);
+  border-radius: 8px;
+  background: rgba(224, 162, 78, 0.1);
+  cursor: move;
+}
+
+.move__label {
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: var(--spice-400);
+  color: var(--spice-ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.move .button {
+  background: var(--night-900);
+}
+
+.move .button:hover {
+  background: var(--spice-400);
+}
+
+.move__grip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px 0 8px 0;
+  background: var(--spice-400);
+  cursor: nwse-resize;
+}

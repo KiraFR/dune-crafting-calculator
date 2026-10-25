@@ -1,0 +1,110 @@
+/* Overlay page: shown in a transparent, click-through window over the game,
+ * so the page itself is transparent and the panel carries the backdrop. */
+
+html.is-overlay,
+html.is-overlay body {
+  background: transparent;
+}
+
+.overlay {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: min(360px, 100vw);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--overlay-panel);
+  font-size: 15px;
+  text-shadow: var(--overlay-shadow);
+}
+
+.overlay__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.overlay__building {
+  color: var(--sand-300);
+  font-size: 13px;
+}
+
+.overlay__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* Over the game, rows stay tight and undivided: the panel is small. */
+.overlay .plan-row {
+  padding: 1px 0;
+}
+
+.overlay .plan-row + .plan-row {
+  border-top: 0;
+}
+
+.overlay .plan-row__details {
+  font-size: 12px;
+}
+
+/* In "Craft", the materials made along the way, then this line, then the items
+ * asked for. */
+.plan-divider {
+  width: 100%;
+  height: 1px;
+  margin: var(--space-1) 0;
+  border: 0;
+  background: var(--night-600);
+}
+
+/* ---------- In the overlay app (`?app=1`) ---------- */
+
+/* The app sizes its window to the panel, so the page never scrolls and the
+ * panel keeps its full width whatever the window's size. */
+html.is-app,
+html.is-app body {
+  overflow: hidden;
+}
+
+.overlay--app {
+  width: 360px;
+}
+
+/* Tick box · quantity left · icon · name. The tick box column is always there,
+ * so the controls showing up under the mouse move nothing: the window keeps
+ * its size and the row under the cursor stays put. */
+.plan-row--tick {
+  position: relative;
+  grid-template-columns: 18px 56px 24px minmax(0, 1fr);
+  column-gap: var(--space-2);
+}
+
+.plan-row--tick .plan-row__details {
+  grid-column: 4;
+}
+
+/* The "I have" field keeps the row's height, so opening it moves nothing. */
+.plan-row--tick .qty-edit__input {
+  height: 24px;
+  padding: 0 var(--space-1);
+}
+
+/* Plain as the read-only overlay until the mouse is over the panel; − / +
+ * only on the row under the mouse, over the end of its name. */
+.overlay--app .have-check,
+.overlay--app .stepper {
+  visibility: hidden;
+}
+
+.overlay--app:hover .have-check,
+.overlay--app .plan-row:hover .stepper {
+  visibility: visible;
+}
+
+.plan-row--tick .stepper {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+}

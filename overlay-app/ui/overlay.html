@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="fr" class="overlay-window">
+<head>
+  <meta charset="utf-8">
+  <title>Dune Overlay</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="overlay.js" defer></script>
+</head>
+<body>
+  <iframe id="frame" title="Reste à faire"></iframe>
+  <div id="move" class="move" hidden>
+    <div class="move__frame" data-tauri-drag-region>
+      <span class="move__label" data-tauri-drag-region>Déplacement</span>
+      <button id="lock" type="button" class="button">Verrouiller</button>
+    </div>
+    <div id="grip" class="move__grip" title="Redimensionner"></div>
+  </div>
+</body>
+</html>

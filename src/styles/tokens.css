@@ -1,0 +1,57 @@
+/* Design tokens: the single source for colors, type, spacing and radii.
+ * Mirrored in the "Dune Crafting Calculator UI" design system (see DESIGN.md);
+ * change a value here and there together.
+ *
+ * Direction, "refinery night": warm umber neutrals of a desert night, a spice
+ * ochre accent for what is left to do, and Ibad blue for what is covered.
+ * Dark only, on purpose: the site sits next to the game, often at night.
+ */
+
+@import '@fontsource/saira-semi-condensed/latin-600.css';
+@import '@fontsource/saira-semi-condensed/latin-700.css';
+@import '@fontsource/ibm-plex-sans/latin-400.css';
+@import '@fontsource/ibm-plex-sans/latin-500.css';
+@import '@fontsource/ibm-plex-sans/latin-600.css';
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces, darkest to lightest */
+  --night-950: #14110e; /* page background */
+  --night-900: #1c1814; /* panels */
+  --night-800: #26201a; /* inputs, hovered rows */
+  --night-700: #3a3128; /* dividers */
+  --night-600: #7a6a56; /* control borders (3:1 on panels) */
+
+  /* Text */
+  --sand-50: #f1e6d2; /* primary text */
+  --sand-300: #b9a888; /* secondary text */
+  --sand-500: #9c8c72; /* captions (4.5:1 up to night-800) */
+
+  /* Meaning */
+  --spice-400: #e0a24e; /* accent: actions, what is left to do */
+  --spice-ink: #1a120a; /* text on the accent */
+  --ibad-400: #6cb4ec; /* covered, owned, done */
+  --rust-400: #e2734f; /* errors */
+
+  /* Overlay window: floats over the game, so it carries its own backdrop */
+  --overlay-panel: rgba(16, 13, 10, 0.74);
+  --overlay-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+
+  /* Type */
+  --font-display: 'Saira Semi Condensed', 'Arial Narrow', sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+
+  /* Spacing (4px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radii */
+  --radius-sm: 2px; /* chips */
+  --radius-md: 4px; /* controls */
+  --radius-lg: 8px; /* panels */
+}
