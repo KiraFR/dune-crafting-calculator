@@ -45,6 +45,8 @@ the only key, so keep it within the guild. **My list** brings you back to your p
 3. Paste your guild link in the overlay's settings. From then on, the overlay shows whenever Dune runs.
 4. **Ctrl + Shift + O** hides or shows it. Hover the panel to tick a row or change it with − / +.
 
+New versions install themselves, never during a game: the app waits until Dune is closed.
+
 The hotkey, position, size, opacity, text size and sections can all be changed from its settings or
 its tray icon: see [overlay-app/README.md](overlay-app/README.md). The overlay never touches the game
 process (nothing is injected into it or read from it): it only checks the process list to see whether
@@ -136,9 +138,10 @@ The build stops if it is missing.
 
 GitHub Actions builds the exe and the installer on every push that touches `overlay-app/` (artifact
 `dune-overlay-windows`). It reads `SITE_URL` from a repository secret of the same name (Settings >
-Secrets and variables > Actions), which keeps it out of the build logs. Pushing a tag `overlay-v<version>` also publishes both as a
-release; bump `version` in `overlay-app/tauri.conf.json` and `overlay-app/Cargo.toml` first, since the
-installer compares it with the installed one. Tests and internals: [overlay-app/README.md](overlay-app/README.md).
+Secrets and variables > Actions), which keeps it out of the build logs. Pushing a tag
+`overlay-v<version>` publishes a release that installed apps update to by themselves; it needs the
+updater's signing key in two more secrets. Releasing, signing, tests and internals:
+[overlay-app/README.md](overlay-app/README.md).
 
 ## How it works
 

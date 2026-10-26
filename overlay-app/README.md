@@ -11,8 +11,11 @@ fullscreen).
 - **Install**: run `dune-overlay-setup.exe` from the latest `overlay-v*` release. It installs for the
   current Windows user only, in `%LOCALAPPDATA%\Dune Overlay`, without admin rights, and adds a Start
   menu shortcut. It is in French or English, after Windows' language.
-- **Update**: run the newer setup. It finds the installed version and, by default, removes it before
-  installing the new one; settings are kept. If the app is running, the setup asks to close it first.
+- **Updates install themselves** (from 0.3.0 on). The app checks for a newer release at launch and
+  every 6 hours, downloads it in the background, and installs it at a quiet moment: when Dune is not
+  running and neither the settings nor the list window is open, so never during a game. It then quits
+  for a few seconds and comes back in the new version; settings are kept. The tray icon's tooltip shows
+  the version. Running a newer setup by hand still works too.
 - **Uninstall**: Windows Settings > Apps > Installed apps > Dune Overlay. The uninstaller offers to
   delete the app's data as well (settings and the WebView2 profile); unticked, they stay for a later
   install.
@@ -61,6 +64,9 @@ Settings live in `%APPDATA%\dune-crafting-calculator.overlay\settings.json`.
 - `src/detect.rs` looks `DuneSandbox-Win64-Shipping.exe` up in a process-list snapshot once a second.
   It never opens a handle to the game process, which BattlEye protects; nothing is injected into or read
   from the game.
+- `src/update.rs` uses Tauri's updater plugin. It reads `latest.json` from the latest GitHub release
+  (endpoint in `tauri.conf.json`), checks the installer's signature against the public key there, and
+  runs the installer silently (`installMode: quiet`), which restarts the app.
 - `src/main.rs` ticks every 50 ms and is the only place that shows or hides the overlay (shown in move
   mode, otherwise when a list is set, the player has not hidden it and Dune runs or "always visible" is
   on) and, outside move mode, the only place that gives it the mouse: only while the cursor
@@ -86,17 +92,39 @@ npx @tauri-apps/cli@2.12.4 build   # the exe, then the installer in target/relea
 ```
 
 The installer is Tauri's NSIS bundle, set in `tauri.conf.json` (`bundle.windows.nsis`: per-user
-install, French and English). The first build downloads NSIS into `%LOCALAPPDATA%\tauri`. Bump
-`version` in both `tauri.conf.json` and `Cargo.toml` for each release: the setup compares it with the
-installed one to offer the update.
+install, French and English). The first build downloads NSIS into `%LOCALAPPDATA%\tauri`. A plain
+build is unsigned, which is fine to try the app; installed apps only accept updates signed with the
+updater's key.
 
 GitHub Actions (`.github/workflows/overlay-app.yml`) runs the tests and builds the exe and the installer
 on a Windows runner for every push to `main` or pull request that touches `overlay-app/`, and on demand
-(Run workflow). It reads `SITE_URL` from a repository secret (Settings > Secrets and variables >
-Actions), masked in the logs, so set that once; pull requests from forks, which get no secrets, build
-against a placeholder address. Both are the run's `dune-overlay-windows` artifact (kept 90 days). Pushing a tag
-`overlay-v<version>` (e.g. `overlay-v0.2.1`) also publishes a GitHub release with
-`dune-overlay-setup.exe` and `dune-overlay.exe` attached.
+(Run workflow). Both are the run's `dune-overlay-windows` artifact (kept 90 days). It needs three
+repository secrets (Settings > Secrets and variables > Actions), masked in the logs:
+
+| Secret | What |
+| --- | --- |
+| `SITE_URL` | the calculator's address; pull requests from forks, which get no secrets, build against a placeholder |
+| `TAURI_SIGNING_PRIVATE_KEY` | the updater's private key, the content of the `.key` file |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | its password |
+
+The key pair comes from `npx @tauri-apps/cli@2.12.4 signer generate -w <file>`: the public half goes in
+`tauri.conf.json` (`plugins.updater.pubkey`), the private half and its password in the secrets. Keep a
+copy of both somewhere safe: an app installed with this public key only accepts updates signed with
+that private key, so losing it means every player has to reinstall by hand. A fork uses its own key
+pair and points `plugins.updater.endpoints` at its own releases.
+
+To publish a version:
+
+1. Bump `version` in both `tauri.conf.json` and `Cargo.toml` (then build once so `Cargo.lock` follows),
+   and push.
+2. Push a tag `overlay-v<version>`, e.g. `overlay-v0.3.0`. The workflow refuses a tag that does not
+   match the version, builds and signs the installer (`tauri.updater.conf.json` turns the signature on),
+   writes `latest.json` and publishes a GitHub release with `dune-overlay-setup.exe`, `dune-overlay.exe`
+   and `latest.json`.
+3. Installed apps pick it up within 6 hours, or at their next launch.
+
+The updater reads the release from GitHub without signing in, so it only works while the repository
+is public.
 
 To try it without the game, set `DUNE_OVERLAY_GAME_EXE` to another program's executable before
 launching (`charmap.exe` works well). The overlay then shows while that program runs. Quit from the

@@ -5,11 +5,12 @@
 // so only the app's own pages talk to the app; the remote page gets no IPC. The window lets clicks
 // through to the game, except while the cursor is over the panel, where the page offers tick / − / +.
 // Settings live in ui/settings.html, opened from the tray icon, which can also open the whole
-// calculator in a window of its own.
+// calculator in a window of its own. New versions install themselves (update.rs).
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod detect;
 mod settings;
+mod update;
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -344,7 +345,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let quit_item = MenuItem::with_id(app, "quit", "Quitter", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&settings_item, &site_item, &move_item, &toggle_item, &quit_item])?;
     let mut tray = TrayIconBuilder::with_id("main")
-        .tooltip("Dune Overlay")
+        .tooltip(format!("Dune Overlay {}", app.package_info().version))
         .menu(&menu)
         .show_menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id.as_ref() {
@@ -374,9 +375,20 @@ fn cursor_over_panel(window: &WebviewWindow, panel: Option<Rect>) -> bool {
     x >= panel.x && x < panel.x + panel.width && y >= panel.y && y < panel.y + panel.height
 }
 
+/// Nothing would be interrupted by the app quitting for a moment: Dune is not running, the overlay is
+/// not being moved, and neither the settings nor the list window is open.
+fn quiet_moment(app: &AppHandle, state: &State) -> bool {
+    let open = |label| app.get_webview_window(label).is_some_and(|w| w.is_visible().unwrap_or(false));
+    !state.dune_running.load(Ordering::Relaxed)
+        && !state.moving.load(Ordering::Relaxed)
+        && !open(SETTINGS)
+        && !open(SITE)
+}
+
 /// The only place the overlay is shown or hidden, and (outside move mode) the only place that gives it
 /// the mouse. Shown in move mode, otherwise while a list is set, the player has not hidden it, and Dune
 /// runs (or "always visible" is on). It takes the mouse only while the cursor is over the panel.
+/// It is also where a downloaded update gets installed, at a quiet moment.
 fn watch(app: AppHandle) {
     std::thread::spawn(move || {
         let mut detector = detect::Detector::default();
@@ -388,6 +400,9 @@ fn watch(app: AppHandle) {
                 let running = detector.dune_running();
                 if state.dune_running.swap(running, Ordering::Relaxed) != running {
                     let _ = app.emit_to(SETTINGS, "dune", running);
+                }
+                if quiet_moment(&app, &state) {
+                    update::install_pending(&app);
                 }
             }
             tick = tick.wrapping_add(1);
@@ -423,6 +438,7 @@ fn watch(app: AppHandle) {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| open_settings(app)))
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, _shortcut, event| {
@@ -457,6 +473,7 @@ fn main() {
                 dune_running: AtomicBool::new(false),
                 panel: Mutex::new(None),
             });
+            app.manage(update::Pending::default());
 
             let handle = app.handle().clone();
             if let Ok(shortcut) = hotkey.parse::<Shortcut>() {
@@ -469,6 +486,7 @@ fn main() {
             if !has_list {
                 open_settings(&handle);
             }
+            update::start(handle.clone());
             watch(handle);
             Ok(())
         })

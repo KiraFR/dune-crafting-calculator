@@ -1,7 +1,8 @@
 # Builds the overlay app's Windows exe and installer (overlay-app/).
 # - Every push to main or PR touching the app, or a manual run: tests, then the portable exe and the
 #   installer (dune-overlay-setup.exe) as an artifact.
-# - A tag "overlay-v*" (e.g. overlay-v0.2.1): the same, plus a GitHub release with both attached.
+# - A tag "overlay-v*" (e.g. overlay-v0.3.0, matching the version in tauri.conf.json): the same, signed,
+#   plus a GitHub release with both attached and latest.json, which installed apps read to update.
 name: Overlay app
 
 on:
@@ -23,6 +24,10 @@ jobs:
       # The calculator's address, baked into the app (overlay-app/build.rs): a repository secret, so the
       # public logs mask it. Pull requests from forks get no secrets and build against a placeholder.
       SITE_URL: ${{ secrets.SITE_URL || github.event_name == 'pull_request' && 'https://dune.example.com' || '' }}
+      # The updater's signing key (its public half is in tauri.conf.json). Without it (forks), the
+      # installer is built unsigned and no release can be made.
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     defaults:
       run:
         working-directory: overlay-app
@@ -39,13 +44,41 @@ jobs:
       - name: Hotkey tests
         run: node --test tests/hotkey.test.cjs
 
-      # The Tauri CLI builds the release exe, then the NSIS installer from it (bundle in tauri.conf.json).
+      # The Tauri CLI builds the release exe, then the NSIS installer from it (bundle in tauri.conf.json),
+      # and with the key signs it for the updater (tauri.updater.conf.json). A release needs the key, and
+      # its tag must match the app's version: the updater compares versions, not tags.
       - name: Build the exe and the installer
-        run: npx --yes @tauri-apps/cli@2.12.4 build --ci -- --locked
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/overlay-v*') {
+            $version = (Get-Content tauri.conf.json -Raw | ConvertFrom-Json).version
+            if ($env:GITHUB_REF_NAME -ne "overlay-v$version") { throw "Tag $env:GITHUB_REF_NAME does not match version $version in tauri.conf.json" }
+            if (-not $env:TAURI_SIGNING_PRIVATE_KEY) { throw 'A release needs the TAURI_SIGNING_PRIVATE_KEY secret' }
+          }
+          $updater = @()
+          if ($env:TAURI_SIGNING_PRIVATE_KEY) { $updater = '--config', 'tauri.updater.conf.json' }
+          npx --yes @tauri-apps/cli@2.12.4 build --ci @updater -- --locked
 
       # The bundler names it "Dune Overlay_<version>_x64-setup.exe"; a fixed name keeps links stable.
       - name: Name the installer
         run: Copy-Item -Path "target/release/bundle/nsis/*-setup.exe" -Destination "target/release/dune-overlay-setup.exe"
+
+      # Installed apps read latest.json from the latest release: the version, the installer's address
+      # and its signature (the renamed installer has the same bytes, so the same signature).
+      - name: Write the update manifest
+        if: startsWith(github.ref, 'refs/tags/overlay-v')
+        run: |
+          $version = (Get-Content tauri.conf.json -Raw | ConvertFrom-Json).version
+          $signature = (Get-Content -Raw (Get-Item "target/release/bundle/nsis/*-setup.exe.sig").FullName).Trim()
+          @{
+            version = $version
+            pub_date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+            platforms = @{
+              'windows-x86_64' = @{
+                signature = $signature
+                url = "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/releases/download/$env:GITHUB_REF_NAME/dune-overlay-setup.exe"
+              }
+            }
+          } | ConvertTo-Json -Depth 4 | Set-Content -Path target/release/latest.json -Encoding utf8NoBOM
 
       - uses: actions/upload-artifact@v7
         with:
@@ -53,6 +86,7 @@ jobs:
           path: |
             overlay-app/target/release/dune-overlay-setup.exe
             overlay-app/target/release/dune-overlay.exe
+            overlay-app/target/release/latest.json
           if-no-files-found: error
 
   release:
@@ -71,4 +105,6 @@ jobs:
           files: |
             dune-overlay-setup.exe
             dune-overlay.exe
+            latest.json
+          fail_on_unmatched_files: true
           generate_release_notes: true
