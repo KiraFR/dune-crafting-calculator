@@ -217,7 +217,16 @@ deploy/               deployment script, nginx container and its config
 overlay-app/          the in-game overlay window (Tauri), see overlay-app/README.md
 ```
 
-## Game data
+## License
 
-This is a fan project, not affiliated with or endorsed by Funcom. `data/site-data.json` and the icons
-in `public/icons/` are extracted from Dune: Awakening and belong to Funcom and its licensors.
+Copyright © 2026 KiraFR. The code is free software under the GNU Affero General Public License,
+version 3 or later ([LICENSE](LICENSE)): you may use, study, modify and share it, and a modified version
+you run for others, such as a public site, must offer them its source code under the same licence.
+
+The licence does not cover:
+
+- **the game's data and artwork**: `data/site-data.json`, `data/names.fr.json` and the icons in
+  `public/icons/` are extracted from Dune: Awakening and belong to Funcom and its licensors. This is a
+  fan project, not affiliated with or endorsed by Funcom;
+- **the fonts**: Saira Semi Condensed and IBM Plex Sans keep their SIL Open Font License
+  (`overlay-app/ui/fonts/`, and the `@fontsource` packages on the site).
