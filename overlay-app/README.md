@@ -96,6 +96,12 @@ install, French and English). The first build downloads NSIS into `%LOCALAPPDATA
 build is unsigned, which is fine to try the app; installed apps only accept updates signed with the
 updater's key.
 
+`nsis/installer.nsi` is Tauri's own NSIS template, from the Tauri CLI version the build uses (2.12.4),
+with one change, described at its top: the installer also finds an installed version through its
+uninstall entry. Tauri looks it up under the publisher's registry key only, and the publisher changed
+after 0.2.1, so without the change a 0.2.1 install could not be uninstalled by a newer setup ("Unable to
+uninstall"). When upgrading the Tauri CLI, take its new template and reapply the change.
+
 GitHub Actions (`.github/workflows/overlay-app.yml`) runs the tests and builds the exe and the installer
 on a Windows runner for every push to `main` or pull request that touches `overlay-app/`, and on demand
 (Run workflow). Both are the run's `dune-overlay-windows` artifact (kept 90 days). It needs three
