@@ -20,7 +20,8 @@ The code is the source of truth. When a value changes, change it in both places:
   middle three stacked panels: Selected items, Raw materials, Crafting steps; on the right, the Machines
   panel. The machine is chosen once per kind of refinery, from picture cards (only the kinds the list
   needs), never per item. Below 1400px the Machines panel moves above Selected items, its kinds side by
-  side. The item list has category tabs with game icons (All, six big categories, Other), then the
+  side. The item list has category tabs with game icons, three per row (All, six big categories, the
+  machines as "Placeables", Other), then the
   chosen tab's items as a tree (subcategory › model › items; branches open by themselves while searching
   or filtering), and Unique / tier filter chips. No dropdowns for browsing. Add information only when the
   player asks.
@@ -33,7 +34,8 @@ The code is the source of truth. When a value changes, change it in both places:
   neutral wording (infinitives, neither "tu" nor "vous") and French number spacing (`1 500`). French names run long:
   lists wrap names onto two lines instead of truncating them.
 - **Every plan row is the same**: tick box · quantity left · icon · name, with at most one details line
-  for crafting steps (crafts · duration · ingredients as small icons). Clicking the quantity opens an
+  for crafting steps (crafts · duration · ingredients as small icons; a machine shows "N to build"
+  instead of crafts · duration). Clicking the quantity opens an
   "I have" field for partial stock, shown as "have N" in Ibad blue. Covered rows sink to the bottom of
   their panel, struck through; rows nothing needs any more disappear.
 - **Dark only**, warm umber neutrals: `night-950` page, `night-900` panels, `night-800` controls and icon

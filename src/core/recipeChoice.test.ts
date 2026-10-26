@@ -11,9 +11,9 @@ import { realData } from './testing';
 
 describe('site data', () => {
   it('has the documented shape', () => {
-    expect(Object.keys(realData.items)).toHaveLength(1025);
-    expect(Object.keys(realData.recipes)).toHaveLength(981);
-    expect(Object.keys(realData.stations)).toHaveLength(18);
+    expect(Object.keys(realData.items)).toHaveLength(1067);
+    expect(Object.keys(realData.recipes)).toHaveLength(1022);
+    expect(Object.keys(realData.stations)).toHaveLength(19);
   });
 
   it('has 14 items with alternative recipes', () => {

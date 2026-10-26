@@ -22,8 +22,8 @@ describe('icons', () => {
     ];
     const missing = referenced.map(iconFile).filter((file): file is string => file !== undefined && !exported.has(file));
     expect(missing).toEqual([]);
-    expect(Object.keys(realData.stationIcons)).toHaveLength(18);
-    expect(exported.size).toBe(431);
+    expect(Object.keys(realData.stationIcons)).toHaveLength(19);
+    expect(exported.size).toBe(471);
   });
 
   it('marks the items the game calls Unique', () => {

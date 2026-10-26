@@ -30,7 +30,16 @@ describe('category tree', () => {
     expect(other.children).toHaveLength(8);
     const all = buildTree(craftable, 'all', label, 'en');
     expect(all.children.find((c) => c.name === OTHER_NODE)?.count).toBe(27);
-    expect(all.children).toHaveLength(7);
+    expect(all.children).toHaveLength(8);
+  });
+
+  it('groups machines like the construction menu', () => {
+    expect(summary(buildTree(craftable, 'Placeables', label, 'en'))).toEqual([
+      ['Fabricators', 10],
+      ['Refineries', 12],
+      ['Storage', 7],
+      ['Utilities', 12],
+    ]);
   });
 
   it('has a real item for every tab icon', () => {

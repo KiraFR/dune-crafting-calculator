@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { BUILD_STATION } from './gameData';
 import { computePlan, RecipeCycleError, type Target } from './plan';
 import { makeRecipeResolver, type StationSize } from './recipeChoice';
 import { fixture, lookup, rawRemaining, realData } from './testing';
@@ -28,6 +29,16 @@ describe('computePlan on real data', () => {
     const p = plan([{ item: 'SteelBar', qty: 1 }]);
     expect(p.steps.map((s) => s.item)).toEqual(['IronBar', 'SteelBar']);
     expect(p.steps[1]).toMatchObject({ stations: ['MediumOreRefinery'], duration: 4, inputs: { DolomiteRock: 3, IronBar: 1, Water: 50 } });
+  });
+
+  it('plans a machine from its construction cost, in no time', () => {
+    const p = plan([{ item: 'MediumOreRefinery_Placeable', qty: 2 }], { owned: { SteelBar: 50 } });
+    const build = p.steps.find((s) => s.item === 'MediumOreRefinery_Placeable');
+    // Medium Ore Refinery: 125 Steel Ingot, 45 Cobalt Paste, 35 Complex Machinery each, built with the Construction Tool.
+    expect(build).toMatchObject({ stations: [BUILD_STATION], crafts: 2, totalDuration: 0 });
+    expect(build?.inputs).toEqual({ SteelBar: 250, CobaltBar: 90, T2MachineComponent: 70 });
+    // Owned steel is subtracted before the steel is crafted.
+    expect(p.lines.SteelBar).toMatchObject({ needed: 250, remaining: 200, crafts: 200 });
   });
 
   it('switches every refinery recipe with the size preference', () => {

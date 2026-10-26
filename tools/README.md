@@ -41,6 +41,12 @@ carries the engine's reflection tables, which `usmap_gen` turns into `.usmap` ma
    `items.json` maps each internal ID to `name`, `category` (UI path), `typeTag`, `tier`, `rarityTag`,
    `icon`, `enabled`, `removed` and `sourceTable`.
 
+   Export the machines' tables into the same directory (see "Machines" below):
+
+   ```
+   dotnet run --project tools/recipe_export -c Release -- <client-paks-dir> DuneAwakening-server.usmap <oo2core_9_win64.dll> "PlaceableData/DT_PlaceableData_Functional|BuildableGroupData/DT_BuildableGroupData_Placeable|Data/DT_BuildableUiCategory|DT_DuneBuildableUiSubcategory" <client-export-dir> DuneAwakening-server.mapstructs.json
+   ```
+
 6. Build the calculator's data file (export `Systems/Crafting/DT_CraftingProduction` too, for station
    names):
 
@@ -59,24 +65,44 @@ carries the engine's reflection tables, which `usmap_gen` turns into `.usmap` ma
    Each icon is cropped to its visible content before resizing, so it fills its tile at list size.
 
 8. Build the French names (items, UI categories, stations) as `data/names.fr.json`: export the item table,
-   the station names and the categories again with `RECIPE_EXPORT_LANGUAGE=French`, then translate:
+   the station names, the machines' tables and the categories again with `RECIPE_EXPORT_LANGUAGE=French`,
+   then translate:
 
    ```
    set RECIPE_EXPORT_LANGUAGE=French
-   dotnet run --project tools/recipe_export -c Release -- <client-paks-dir> DuneAwakening-server.usmap <oo2core_9_win64.dll> "CDT_BaseItems|DT_CraftingProductionTypes" <fr-export-dir> DuneAwakening-server.mapstructs.json
+   dotnet run --project tools/recipe_export -c Release -- <client-paks-dir> DuneAwakening-server.usmap <oo2core_9_win64.dll> "CDT_BaseItems|DT_CraftingProductionTypes|PlaceableData/DT_PlaceableData_Functional|BuildableGroupData/DT_BuildableGroupData_Placeable|Data/DT_BuildableUiCategory|DT_DuneBuildableUiSubcategory" <fr-export-dir> DuneAwakening-server.mapstructs.json
    dotnet run --project tools/recipe_export -c Release -- <client-paks-dir> DuneAwakening-server.usmap <oo2core_9_win64.dll> GUI/Data/ItemCategories/ <fr-export-dir>/categories DuneAwakening-server.mapstructs.json
-   python tools/build_translations.py <fr-export-dir> <client-export-dir>/categories <fr-export-dir>/categories data/site-data.json data/names.fr.json --water Eau
+   python tools/build_translations.py <fr-export-dir> <client-export-dir>/categories <fr-export-dir>/categories data/site-data.json data/names.fr.json --en-export <client-export-dir> --water Eau
    ```
 
    Category names are paired through the category asset they come from, so every English path element has
-   its French counterpart. The script reports any item or category left untranslated (the site then shows
-   the English name).
+   its French counterpart; the machines' categories are paired through their construction menu row keys.
+   The script reports any item or category left untranslated (the site then shows the English name).
 
 ## Active recipes
 
 `dune_data.active_recipes` keeps a recipe when it is not on Funcom's cut-content list
 (`DA_ItemsAndRecipesToRemove`), produces something, can be made at one released station (station names
 starting with `PH_` are placeholders) and every item it references is in the catalog, enabled and not cut.
+
+## Machines
+
+Refineries, fabricators, windtraps, generators, storage and the other machines of a base are not crafted:
+they are built in place with the Construction Tool, and their costs are not in `DT_ItemsCraftingRecipes`.
+`tools/machines.py` reads them from the construction menu's tables:
+
+- `DT_BuildableUiCategory`, row `Placeables`, lists the menu's machine subcategories (Utilities,
+  Fabricators, Refineries, Storage); each `DT_DuneBuildableUiSubcategory` row lists buildable groups.
+- A machine is a `DT_PlaceableData_Functional*` row: name, icon, `m_BuildableGroupType` (its group) and
+  `m_BuildableTier` (Tier0 to Tier3: shelter, outpost, base, fortress).
+- Its cost is its group's `m_BuildableTierData[tier].m_PlacementCosts` in
+  `DT_BuildableGroupData_Placeable` (the struct that holds it was found through the `.usmap`).
+
+Debug rows (`XX_...`), developer tools, doors, the portable fabricator (an item, crafted normally) and the
+pentashield surfaces (wall pieces) are left out, and so is a machine whose cost references an item that is
+missing from the catalog, disabled or cut. Each machine becomes an item whose category is the menu path
+(`["Placeables", "Refineries"]`), with one recipe `<machine>_Build`: station `ConstructionTool` (named and
+pictured after the Construction Tool item, `BasicBuildingTool`), duration 0, the cost as ingredients.
 
 ## Site data format
 

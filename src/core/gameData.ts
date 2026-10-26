@@ -78,6 +78,9 @@ export interface GameData {
 
 export const SUPPORTED_SCHEMA = 1;
 
+/** Station of the machines' construction recipes (tools/machines.py): built in place, in no time. */
+export const BUILD_STATION = 'ConstructionTool';
+
 export function indexGameData(raw: RawSiteData): GameData {
   if (raw.schema !== SUPPORTED_SCHEMA) {
     throw new Error(`site-data.json schema ${raw.schema} is not supported (expected ${SUPPORTED_SCHEMA})`);

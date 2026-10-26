@@ -5,6 +5,7 @@
 // on a click on the quantity (the app lends the keyboard while it is open).
 
 import { Fragment, type ReactNode } from 'react';
+import { BUILD_STATION } from '../core/gameData';
 import type { Plan, PlanLine, PlanStep } from '../core/plan';
 import { formatDuration } from './format';
 import { useI18n, type I18n } from './i18n';
@@ -85,10 +86,13 @@ export function RawList({ plan, owned, mode = 'edit', onEditing }: ListProps) {
 
 function StepDetails({ step, compact }: { step: PlanStep; compact: boolean }) {
   const { t, item, qty } = useI18n();
+  const built = step.stations.includes(BUILD_STATION);
   return (
     <span className="plan-row__details">
       <span>
-        {t(step.crafts === 1 ? 'craftsOne' : 'craftsOther', { n: qty(step.crafts) })} · {formatDuration(step.totalDuration)}
+        {built
+          ? t(step.crafts === 1 ? 'buildsOne' : 'buildsOther', { n: qty(step.crafts) })
+          : `${t(step.crafts === 1 ? 'craftsOne' : 'craftsOther', { n: qty(step.crafts) })} · ${formatDuration(step.totalDuration)}`}
       </span>
       {!compact &&
         Object.entries(step.inputs).map(([id, n]) => (

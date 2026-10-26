@@ -6,7 +6,8 @@ to gather: in the browser, with your guild, and over the game.
 ## What it does
 
 - **Plans a build.** Pick items and quantities: the calculator totals the raw materials and lists the
-  crafting steps in order, with the refinery each one needs.
+  crafting steps in order, with the refinery each one needs. The machines of a base (refineries,
+  fabricators, windtraps, generators, storage…) can be planned too, from their construction cost.
 - **Subtracts what you own, in cascade.** Owning 10 ingots removes the ore for those 10. Partial stock
   works too ("I have 40").
 - **Shares a list with your guild.** One secret link, no accounts: everyone edits the same list and
@@ -160,6 +161,8 @@ updater's signing key in two more secrets. Releasing, signing, tests and interna
   kind not above that size, else the smallest above it (Duraluminum has no small ore refinery recipe).
   `makeRecipeResolver` also accepts per-item overrides; the page does not offer them.
 - 193 recipes have quality levels 0 to 5; a build entry picks its level, ingredients stay at level 0.
+- Machines are built in place with the Construction Tool rather than crafted: each has one recipe, its
+  construction cost, that takes no time (`BUILD_STATION`; see "Machines" in tools/README.md).
 
 ### State and guild lists
 

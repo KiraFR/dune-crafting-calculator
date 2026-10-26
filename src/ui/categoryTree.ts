@@ -1,10 +1,11 @@
 // Category tabs of the item list and the tree shown under the chosen tab.
-// The six big top-level categories get a tab each; the small leftovers (stray
-// vehicle-part categories of 2 to 6 items) share an "Other" tab.
+// The six big top-level categories and the machines (the construction menu's
+// "Placeables") get a tab each; the small leftovers (stray vehicle-part
+// categories of 2 to 6 items) share an "Other" tab.
 
 import type { Item } from '../core/gameData';
 
-export const MAIN_TABS = ['Garments', 'Vehicles', 'Weapons', 'Utility', 'Augmentations', 'Misc'] as const;
+export const MAIN_TABS = ['Garments', 'Vehicles', 'Weapons', 'Utility', 'Augmentations', 'Misc', 'Placeables'] as const;
 
 export type TabKey = 'all' | (typeof MAIN_TABS)[number] | 'other';
 
@@ -16,6 +17,7 @@ export const TAB_ICON_ITEM: Record<(typeof MAIN_TABS)[number], string> = {
   Utility: 'MiningTool_1h_Heavy',
   Augmentations: 'T6_Augment_Acuracy1',
   Misc: 'SteelBar',
+  Placeables: 'MediumOreRefinery_Placeable',
 };
 
 /** Node name standing for the "Other" group in the All tab. */

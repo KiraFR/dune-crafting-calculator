@@ -4,7 +4,8 @@ usage: python tools/build_site_data.py <client-export-dir> <items.json> <out.jso
            [--client-manifest appmanifest_1172710.acf] [--server-manifest appmanifest_4754530.acf]
 
 The format is documented in tools/README.md ("Site data format"). Water is modelled as the pseudo-item
-`Water`, since recipes both consume it (refineries) and produce it.
+`Water`, since recipes both consume it (refineries) and produce it. Machines (tools/machines.py) are items
+too, each with a recipe for its construction cost.
 """
 import argparse
 import gzip
@@ -18,6 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from dune_data import active_recipes, load_rows, load_station_icons, load_station_names, recipe_item_ids  # noqa: E402
+from machines import BUILD_STATION, BUILD_TOOL_ITEM, machines  # noqa: E402
 
 SCHEMA = 1
 WATER = "Water"
@@ -65,12 +67,23 @@ def build(export_dir, catalog):
         used_items.update(i for level in levels for i in level)
         used_stations.update(stations)
 
+    # Machines are not in the item catalog: they get catalog-like entries of their own.
+    built = {}
+    for machine_id, machine in machines(export_dir, catalog).items():
+        out_recipes[f"{machine_id}_Build"] = {"s": [BUILD_STATION], "d": 0, "o": {machine_id: 1}, "q": [machine["cost"]]}
+        built[machine_id] = {"name": machine["name"], "category": machine["category"], "tier": None, "icon": machine["icon"]}
+        used_items.add(machine_id)
+        used_items.update(machine["cost"])
+    if built:
+        used_stations.add(BUILD_STATION)
+        station_names[BUILD_STATION] = catalog[BUILD_TOOL_ITEM]["name"]
+
     categories, category_index, out_items = [], {}, {}
     for item_id in sorted(used_items):
         if item_id == WATER:
             out_items[item_id] = {"n": "Water"}
             continue
-        entry = catalog[item_id]
+        entry = catalog.get(item_id) or built[item_id]
         key = tuple(entry["category"])
         if key not in category_index:
             category_index[key] = len(categories)
@@ -86,7 +99,7 @@ def build(export_dir, catalog):
         out_items[item_id] = item
 
     stations = {sid: station_names[sid] for sid in sorted(used_stations)}
-    icons = load_station_icons(export_dir)
+    icons = load_station_icons(export_dir) | {BUILD_STATION: catalog[BUILD_TOOL_ITEM]["icon"]}
     station_icons = {sid: compact_icon(icons.get(sid)) for sid in sorted(used_stations) if icons.get(sid)}
     return out_recipes, out_items, categories, stations, station_icons
 
