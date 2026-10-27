@@ -134,42 +134,43 @@ export function QtyEdit({ line, owned, onEditing }: { line: PlanLine; owned: num
     onEditing(true);
     return () => onEditing(false);
   }, [editing, onEditing]);
-  if (editing) {
-    return (
-      <input
-        className="qty-input qty-edit__input"
-        type="number"
-        inputMode="numeric"
-        min={0}
-        step={1}
-        defaultValue={owned || ''}
-        aria-label={t('ownedOf', { name })}
-        autoFocus
-        onFocus={(e) => {
-          cancelled.current = false;
-          e.target.select();
-        }}
-        onBlur={(e) => {
-          if (!cancelled.current) setOwned(line.item, Number.parseInt(e.target.value, 10) || 0);
-          setEditing(false);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') cancelled.current = true;
-          if (e.key === 'Enter' || e.key === 'Escape') e.currentTarget.blur();
-        }}
-      />
-    );
-  }
   const shown = line.remaining || line.needed;
+  // The quantity stays under the open field, hidden, so its column keeps its width.
   return (
-    <button
-      type="button"
-      className="qty-edit num"
-      title={t('enterOwned')}
-      aria-label={`${qty(shown)} ${name}. ${t('enterOwned')}`}
-      onClick={() => setEditing(true)}
-    >
-      {qty(shown)}
-    </button>
+    <span className={`qty-cell${editing ? ' is-editing' : ''}`}>
+      <button
+        type="button"
+        className="qty-edit num"
+        title={t('enterOwned')}
+        aria-label={`${qty(shown)} ${name}. ${t('enterOwned')}`}
+        onClick={() => setEditing(true)}
+      >
+        {qty(shown)}
+      </button>
+      {editing && (
+        <input
+          className="qty-input qty-edit__input"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          step={1}
+          defaultValue={owned || ''}
+          aria-label={t('ownedOf', { name })}
+          autoFocus
+          onFocus={(e) => {
+            cancelled.current = false;
+            e.target.select();
+          }}
+          onBlur={(e) => {
+            if (!cancelled.current) setOwned(line.item, Number.parseInt(e.target.value, 10) || 0);
+            setEditing(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') cancelled.current = true;
+            if (e.key === 'Enter' || e.key === 'Escape') e.currentTarget.blur();
+          }}
+        />
+      )}
+    </span>
   );
 }

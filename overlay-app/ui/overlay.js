@@ -2,7 +2,8 @@
 // drag the window by and a grip to resize it from.
 //
 // The calculator page (`app=1`) posts where its panel is; that goes to the app, which grows the window
-// to fit and gives the window the mouse while the cursor is over the panel. The app's section choice
+// to fit and gives the window the mouse while the cursor is over the panel. The page also asks for the
+// keyboard while an "I have" field is open, and gives it back when it closes. The app's section choice
 // goes back to the page the same way, so switching sections reloads nothing.
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -42,7 +43,11 @@ listen('sections', (event) => {
 
 window.addEventListener('message', (event) => {
   if (!siteOrigin || event.origin !== siteOrigin || event.source !== frame.contentWindow) return;
-  const { type, panel } = event.data ?? {};
+  const { type, panel, wanted } = event.data ?? {};
+  if (type === 'dune-overlay:keyboard') {
+    invoke('take_keyboard', { wanted: wanted === true });
+    return;
+  }
   if (type !== 'dune-overlay:layout' || !panel) return;
   // The page measures in its CSS pixels; the app works in physical pixels. devicePixelRatio covers both
   // the screen scaling and the text size (zoom).

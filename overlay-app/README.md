@@ -28,8 +28,10 @@ fullscreen).
 - **First launch**: the settings window asks for the guild list link, copied from the calculator's
   "Copy link" (`<site>/?list=<id>`). It is remembered.
 - **Ticking from the overlay**: hover the panel to get a tick box (owned in full) and − / + on the
-  quantity left (− = one more owned) on each row; the guild list updates for everyone. Away from the panel, the mouse
-  goes to the game. This needs the calculator's overlay page with `app=1` support.
+  quantity left (− = one more owned) on each row; click the quantity to type how many you have. The guild
+  list updates for everyone. The panel only answers a cursor the game shows (in its menus): while playing,
+  the hidden cursor passes over it and the mouse stays with the game. This needs the calculator's
+  overlay page with `app=1` support.
 - **Hide / show**: `Ctrl + Shift + O` by default, from anywhere, the game included. Change it in the
   settings: click the field, press the new keys. A plain letter needs Ctrl, Alt or Shift (it would fire
   while typing in chat); F1 to F24 work alone.
@@ -58,7 +60,8 @@ Settings live in `%APPDATA%\dune-crafting-calculator.overlay\settings.json`.
   (CSS px) to its parent whenever its panel changes. `ui/overlay.js` checks the origin, converts with
   `devicePixelRatio` and hands it to the app, which keeps it for the hover test and grows the window to
   fit (never shrinks it, and keeps it on its screen). Section changes go the other way as
-  `{ type: 'dune-overlay:options', sections }`, so nothing reloads.
+  `{ type: 'dune-overlay:options', sections }`, so nothing reloads. While an "I have" field is open the
+  page posts `{ type: 'dune-overlay:keyboard', wanted }`, and the app lends the window the keyboard.
 - Both pages declare `color-scheme: dark`, like the calculator: Chromium paints an opaque backdrop
   behind an iframe whose scheme differs from its parent's.
 - `src/detect.rs` looks `DuneSandbox-Win64-Shipping.exe` up in a process-list snapshot once a second.
@@ -69,9 +72,13 @@ Settings live in `%APPDATA%\dune-crafting-calculator.overlay\settings.json`.
   runs the installer silently (`installMode: quiet`), which restarts the app.
 - `src/main.rs` ticks every 50 ms and is the only place that shows or hides the overlay (shown in move
   mode, otherwise when a list is set, the player has not hidden it and Dune runs or "always visible" is
-  on) and, outside move mode, the only place that gives it the mouse: only while the cursor
-  (`GetCursorPos`) is inside the panel. The overlay window cannot take focus, so neither showing it nor
-  clicking it pulls focus away from the game.
+  on) and, outside move mode, the only place that gives it the mouse: only while the cursor is inside
+  the panel and shown (`GetCursorInfo`; the game hides it outside its menus). The overlay window cannot
+  take focus, so neither showing it nor clicking it pulls focus away from the game.
+- `src/focus.rs` lends the keyboard while an "I have" field is open: the window becomes focusable and
+  takes the foreground (`SetForegroundWindow`, joining the foreground thread's input when Windows
+  refuses), then gives it back to the window that had it. No key is simulated, unlike tao's `set_focus`,
+  which presses Alt when refused.
 
 ## Building
 

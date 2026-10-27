@@ -377,7 +377,17 @@
   transform: rotate(45deg);
 }
 
-/* Quantity left, in spice; a click turns it into an "I have" field. */
+/* Quantity left, in spice; a click opens an "I have" field over it. The
+ * quantity stays in its cell, hidden, so the column keeps its width. */
+.qty-cell {
+  position: relative;
+  display: grid;
+}
+
+.qty-cell.is-editing .qty-edit {
+  visibility: hidden;
+}
+
 .qty-edit {
   min-width: 0;
   padding: 0;
@@ -396,8 +406,12 @@
 }
 
 .qty-edit__input {
+  position: absolute;
+  top: 50%;
+  right: 0;
   width: 100%;
   height: 28px;
+  transform: translateY(-50%);
 }
 
 /* − / + for the owned quantity, where there is no keyboard (overlay app). */
@@ -756,12 +770,26 @@
 
 /* ---------- Raw materials and crafting steps ---------- */
 
-/* Check · quantity · icon · name, with an optional details line under the name. */
+/* Check · quantity · icon · name, with an optional details line under the name.
+ * The list sets the columns and its rows share them (subgrid): the quantity
+ * column is as wide as the list's longest quantity, at least 56px, and every
+ * row lines up with the others. */
+.plan-list {
+  display: grid;
+  grid-template-columns: 18px minmax(56px, max-content) 28px minmax(0, 1fr);
+  column-gap: var(--space-3);
+}
+
+.plan-list--readonly {
+  grid-template-columns: minmax(56px, max-content) 24px minmax(0, 1fr);
+}
+
 .plan-row {
   display: grid;
-  grid-template-columns: 18px 56px 28px minmax(0, 1fr);
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: center;
-  gap: 2px var(--space-3);
+  row-gap: 2px;
   padding: var(--space-2) 0;
   font-size: 15px;
   line-height: 22px;
@@ -769,10 +797,6 @@
 
 .plan-row + .plan-row {
   border-top: 1px solid var(--night-700);
-}
-
-.plan-row--readonly {
-  grid-template-columns: 56px 24px minmax(0, 1fr);
 }
 
 .plan-row__qty {

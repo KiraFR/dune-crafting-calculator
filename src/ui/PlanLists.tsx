@@ -40,7 +40,12 @@ export function leftCount(lines: PlanLine[]): number {
   return lines.filter((l) => l.remaining > 0).length;
 }
 
-const ROW_CLASS: Record<ListMode, string> = { edit: '', read: ' plan-row--readonly', tick: ' plan-row--tick' };
+const MODIFIER: Record<ListMode, string> = { edit: '', read: 'readonly', tick: 'tick' };
+
+/** `plan-list` or `plan-row` with the mode's modifier: the list sets the columns, its rows share them. */
+function modeClass(block: 'plan-list' | 'plan-row', mode: ListMode): string {
+  return MODIFIER[mode] ? `${block} ${block}--${MODIFIER[mode]}` : block;
+}
 
 interface RowProps {
   line: PlanLine;
@@ -55,7 +60,7 @@ function Row({ line, owned, mode, onEditing, children }: RowProps) {
   const covered = line.remaining === 0;
   const partial = !covered && line.owned > 0;
   return (
-    <li className={`plan-row${ROW_CLASS[mode]}${covered ? ' is-done' : ''}`}>
+    <li className={`${modeClass('plan-row', mode)}${covered ? ' is-done' : ''}`}>
       {mode !== 'read' && <HaveCheck line={line} />}
       {mode === 'read' ? (
         <span className="num plan-row__qty">{qty(line.remaining)}</span>
@@ -76,7 +81,7 @@ function Row({ line, owned, mode, onEditing, children }: RowProps) {
 export function RawList({ plan, owned, mode = 'edit', onEditing }: ListProps) {
   const i18n = useI18n();
   return (
-    <ul className="plan-list">
+    <ul className={modeClass('plan-list', mode)}>
       {ordered(rawLines(plan, i18n), mode).map((line) => (
         <Row key={line.item} line={line} owned={owned[line.item] ?? 0} mode={mode} onEditing={onEditing} />
       ))}
@@ -118,7 +123,7 @@ export function StepList({ plan, owned, mode = 'edit', onEditing, wanted }: List
   return shown.map((group, i) => (
     <Fragment key={i}>
       {i > 0 && <hr className="plan-divider" />}
-      <ol className="plan-list">
+      <ol className={modeClass('plan-list', mode)}>
         {group.map((line) => {
           const step = steps.get(line.item);
           return (

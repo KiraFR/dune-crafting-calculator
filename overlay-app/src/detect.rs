@@ -1,10 +1,20 @@
-//! Is Dune: Awakening running?
+//! Is Dune: Awakening running, and where is the mouse cursor?
 //!
 //! The game's executable is looked up in a process-list snapshot: the app never opens a handle to the
 //! game process, which BattlEye guards.
 
 /// The game process (the launcher and BattlEye run as other processes).
 pub const GAME_EXE: &str = "DuneSandbox-Win64-Shipping.exe";
+
+/// The mouse cursor as the screen shows it.
+#[derive(Clone, Copy, Debug)]
+pub struct Cursor {
+    /// On the desktop, in physical pixels.
+    pub x: i32,
+    pub y: i32,
+    /// false while the window under it hides it, as the game does outside its menus.
+    pub shown: bool,
+}
 
 /// The executable to watch: the game, or `DUNE_OVERLAY_GAME_EXE` (e.g. `charmap.exe`) to try the
 /// overlay without launching the game.
@@ -15,12 +25,12 @@ fn watched_exe() -> String {
 
 #[cfg(windows)]
 mod imp {
-    use super::watched_exe;
-    use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE, POINT};
+    use super::{watched_exe, Cursor};
+    use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
     use windows_sys::Win32::System::Diagnostics::ToolHelp::{
         CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
     };
-    use windows_sys::Win32::UI::WindowsAndMessaging::GetCursorPos;
+    use windows_sys::Win32::UI::WindowsAndMessaging::{GetCursorInfo, CURSORINFO, CURSOR_SHOWING};
 
     pub struct Detector {
         exe: String,
@@ -55,16 +65,25 @@ mod imp {
         }
     }
 
-    /// The mouse cursor on the desktop, in physical pixels.
-    pub fn cursor_position() -> Option<(i32, i32)> {
-        let mut point = POINT { x: 0, y: 0 };
-        // SAFETY: plain Win32 query into a local.
-        (unsafe { GetCursorPos(&mut point) } != 0).then_some((point.x, point.y))
+    /// The global cursor, whichever process set it: hidden either through ShowCursor or as no cursor at all.
+    pub fn cursor() -> Option<Cursor> {
+        // SAFETY: plain Win32 query into a local, sized as the API requires.
+        unsafe {
+            let mut info: CURSORINFO = std::mem::zeroed();
+            info.cbSize = std::mem::size_of::<CURSORINFO>() as u32;
+            if GetCursorInfo(&mut info) == 0 {
+                return None;
+            }
+            let shown = info.flags & CURSOR_SHOWING != 0 && !info.hCursor.is_null();
+            Some(Cursor { x: info.ptScreenPos.x, y: info.ptScreenPos.y, shown })
+        }
     }
 }
 
 #[cfg(not(windows))]
 mod imp {
+    use super::Cursor;
+
     /// The game only runs on Windows; elsewhere it never runs.
     #[derive(Default)]
     pub struct Detector;
@@ -75,9 +94,9 @@ mod imp {
         }
     }
 
-    pub fn cursor_position() -> Option<(i32, i32)> {
+    pub fn cursor() -> Option<Cursor> {
         None
     }
 }
 
-pub use imp::{cursor_position, Detector};
+pub use imp::{cursor, Detector};

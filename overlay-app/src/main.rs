@@ -3,17 +3,19 @@
 //
 // The overlay window loads a local page (ui/overlay.html) that shows the calculator page in an iframe,
 // so only the app's own pages talk to the app; the remote page gets no IPC. The window lets clicks
-// through to the game, except while the cursor is over the panel, where the page offers tick / − / +.
+// through to the game, except while the game shows its cursor over the panel, where the page offers
+// tick / − / + and an "I have" field, which borrows the keyboard while open (focus.rs).
 // Settings live in ui/settings.html, opened from the tray icon, which can also open the whole
 // calculator in a window of its own. New versions install themselves (update.rs).
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod detect;
+mod focus;
 mod settings;
 mod update;
 
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -57,6 +59,8 @@ struct State {
     dune_running: AtomicBool,
     /// Reported by the calculator page through ui/overlay.js; none until the page supports it.
     panel: Mutex<Option<Rect>>,
+    /// The window to give the keyboard back to when the open "I have" field closes (0: none).
+    keyboard_from: AtomicIsize,
 }
 
 impl State {
@@ -184,6 +188,20 @@ fn set_move_mode(app: AppHandle, on: bool) -> Result<(), String> {
 #[tauri::command]
 async fn open_list(app: AppHandle) {
     open_site(&app);
+}
+
+/// The calculator page asks for the keyboard when an "I have" field opens and gives it back when it
+/// closes. Async, so the hand-off runs on the main thread after the WebView2 callback that carried the
+/// request, not inside it.
+#[tauri::command]
+async fn take_keyboard(app: AppHandle, wanted: bool) -> Result<(), String> {
+    let handle = app.clone();
+    app.run_on_main_thread(move || {
+        let Some(window) = handle.get_webview_window(OVERLAY) else { return };
+        let from = &handle.state::<State>().keyboard_from;
+        from.store(focus::hand(&window, wanted, from.swap(0, Ordering::Relaxed)), Ordering::Relaxed);
+    })
+    .map_err(|e| e.to_string())
 }
 
 /// The calculator page reports where its panel is: keep it for the hover test, and grow the window
@@ -371,13 +389,14 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
+/// The cursor is over the panel, and shown. While the game hides it (playing, out of its menus), it
+/// passes over the panel without the overlay taking the mouse, which would show it.
 fn cursor_over_panel(window: &WebviewWindow, panel: Option<Rect>) -> bool {
-    let (Some(panel), Some((cx, cy)), Ok(origin)) = (panel, detect::cursor_position(), window.inner_position())
-    else {
+    let (Some(panel), Some(cursor), Ok(origin)) = (panel, detect::cursor(), window.inner_position()) else {
         return false;
     };
-    let (x, y) = (f64::from(cx - origin.x), f64::from(cy - origin.y));
-    x >= panel.x && x < panel.x + panel.width && y >= panel.y && y < panel.y + panel.height
+    let (x, y) = (f64::from(cursor.x - origin.x), f64::from(cursor.y - origin.y));
+    cursor.shown && x >= panel.x && x < panel.x + panel.width && y >= panel.y && y < panel.y + panel.height
 }
 
 /// Nothing would be interrupted by the app quitting for a moment: Dune is not running, the overlay is
@@ -392,7 +411,7 @@ fn quiet_moment(app: &AppHandle, state: &State) -> bool {
 
 /// The only place the overlay is shown or hidden, and (outside move mode) the only place that gives it
 /// the mouse. Shown in move mode, otherwise while a list is set, the player has not hidden it, and Dune
-/// runs (or "always visible" is on). It takes the mouse only while the cursor is over the panel.
+/// runs (or "always visible" is on). It takes the mouse only while a shown cursor is over the panel.
 /// It is also where a downloaded update gets installed, at a quiet moment.
 fn watch(app: AppHandle) {
     std::thread::spawn(move || {
@@ -463,7 +482,8 @@ fn main() {
             set_sections,
             set_move_mode,
             open_list,
-            panel_layout
+            panel_layout,
+            take_keyboard
         ])
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");
@@ -477,6 +497,7 @@ fn main() {
                 moving: AtomicBool::new(false),
                 dune_running: AtomicBool::new(false),
                 panel: Mutex::new(None),
+                keyboard_from: AtomicIsize::new(0),
             });
             app.manage(update::Pending::default());
 

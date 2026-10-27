@@ -74,10 +74,13 @@ html.is-app body {
 /* Tick box · quantity left · icon · name. The tick box column is always there,
  * so the controls showing up under the mouse move nothing: the window keeps
  * its size and the row under the cursor stays put. */
+.plan-list--tick {
+  grid-template-columns: 18px minmax(56px, max-content) 24px minmax(0, 1fr);
+  column-gap: var(--space-2);
+}
+
 .plan-row--tick {
   position: relative;
-  grid-template-columns: 18px 56px 24px minmax(0, 1fr);
-  column-gap: var(--space-2);
 }
 
 .plan-row--tick .plan-row__details {
