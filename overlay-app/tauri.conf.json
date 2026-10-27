@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Dune Overlay",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "identifier": "dune-crafting-calculator.overlay",
   "build": {
     "frontendDist": "ui"

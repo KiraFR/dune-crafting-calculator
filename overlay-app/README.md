@@ -14,8 +14,8 @@ fullscreen).
 - **Updates install themselves** (from 0.3.0 on). The app checks for a newer release at launch and
   every 6 hours, downloads it in the background, and installs it at a quiet moment: when Dune is not
   running and neither the settings nor the list window is open, so never during a game. It then quits
-  for a few seconds and comes back in the new version; settings are kept. The tray icon's tooltip shows
-  the version. Running a newer setup by hand still works too.
+  for a few seconds and comes back in the new version; settings are kept. The version shows at the
+  top of the settings window and in the tray icon's tooltip. Running a newer setup by hand still works too.
 - **Uninstall**: Windows Settings > Apps > Installed apps > Dune Overlay. The uninstaller offers to
   delete the app's data as well (settings and the WebView2 profile); unticked, they stay for a later
   install.

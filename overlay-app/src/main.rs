@@ -71,6 +71,7 @@ impl State {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct View {
+    version: String,
     site_url: &'static str,
     list_link: Option<String>,
     overlay_url: Option<String>,
@@ -85,9 +86,10 @@ struct View {
 }
 
 #[tauri::command]
-fn get_view(state: tauri::State<State>) -> View {
+fn get_view(app: AppHandle, state: tauri::State<State>) -> View {
     let settings = state.settings.lock().unwrap();
     View {
+        version: app.package_info().version.to_string(),
         site_url: settings::SITE_URL,
         list_link: settings.list_id.as_deref().map(settings::list_link),
         overlay_url: settings.list_id.as_deref().map(|id| settings::overlay_url(id, &settings.sections())),
@@ -176,8 +178,11 @@ fn set_move_mode(app: AppHandle, on: bool) -> Result<(), String> {
     apply_move_mode(&app, on).map_err(|e| e.to_string())
 }
 
+/// Async on purpose: a sync command runs on the main thread inside the settings page's WebView2
+/// callback, and a webview built from there never loads on Windows: a white window and a frozen app
+/// (wry#583). Any command that builds a window must be async.
 #[tauri::command]
-fn open_list(app: AppHandle) {
+async fn open_list(app: AppHandle) {
     open_site(&app);
 }
 

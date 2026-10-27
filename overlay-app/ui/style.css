@@ -165,6 +165,12 @@ body {
   padding: 24px;
 }
 
+.settings__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
 .field {
   display: flex;
   flex-direction: column;

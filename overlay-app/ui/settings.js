@@ -1,8 +1,10 @@
-// Settings window: the guild list link (and opening it in an app window), the hide/show hotkey, the
-// overlay's opacity, text size and sections, move mode, "always visible", and whether Dune runs.
+// Settings window: the app's version, the guild list link (and opening it in an app window), the
+// hide/show hotkey, the overlay's opacity, text size and sections, move mode, "always visible", and
+// whether Dune runs.
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
 
+const versionText = document.getElementById('version');
 const listInput = document.getElementById('list');
 const listStatus = document.getElementById('list-status');
 const hotkeyButton = document.getElementById('hotkey');
@@ -59,6 +61,7 @@ function showDune(running) {
 }
 
 invoke('get_view').then((view) => {
+  versionText.textContent = `v${view.version}`;
   listInput.placeholder = `${view.siteUrl}/?list=…`;
   listInput.value = view.listLink ?? '';
   hotkey = view.hotkey;
